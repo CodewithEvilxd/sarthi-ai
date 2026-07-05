@@ -1,4 +1,4 @@
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'https://sarthi-ai-backend-we6t.onrender.com').replace(/\/+$/, '');
 
 export interface ChatResponse {
   answer: string;
