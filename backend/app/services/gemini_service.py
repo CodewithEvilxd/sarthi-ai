@@ -2,8 +2,9 @@ from typing import Optional, List, Dict, Any
 
 try:
     import google.generativeai as genai
-except ImportError:  # pragma: no cover - depends on optional runtime package
+except Exception:  # pragma: no cover - depends on optional runtime package
     genai = None
+    print("Warning: google-generativeai import failed. Using mocked responses.")
 
 from app.config import settings
 import random
