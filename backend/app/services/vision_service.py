@@ -1,4 +1,9 @@
-import google.generativeai as genai
+try:
+    import google.generativeai as genai
+except Exception:  # pragma: no cover - optional dependency on Render
+    genai = None
+    print("Warning: google-generativeai import failed in vision_service. Using mock analysis.")
+
 from app.config import settings
 import json
 import random
@@ -9,7 +14,7 @@ def analyze_report_image(image_bytes: bytes, mime_type: str = "image/jpeg") -> d
     Returns structured JSON with extracted values, plain-language explanation,
     and guideline validation.
     """
-    if not settings.gemini_api_key or settings.gemini_api_key == "your_gemini_api_key_here":
+    if genai is None or not settings.gemini_api_key or settings.gemini_api_key == "your_gemini_api_key_here":
         return get_mock_vision_analysis()
         
     prompt = """
