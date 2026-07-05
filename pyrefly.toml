@@ -1,0 +1,3 @@
+search-path = ["backend"]
+python-interpreter-path = "C:/Users/Nishant Gaurav/Downloads/google hack/sarthi-ai/backend/.venv/Scripts/python.exe"
+site-package-path = ["C:/Users/Nishant Gaurav/Downloads/google hack/sarthi-ai/backend/.venv/Lib/site-packages"]

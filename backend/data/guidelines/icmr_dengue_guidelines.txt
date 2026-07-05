@@ -1,0 +1,14 @@
+Indian Council of Medical Research (ICMR) Dengue Surveillance and Clinical Management Guidelines (Source: ICMR Vector-Borne Diseases Division)
+Dengue Clinical Management:
+- Transmission: Dengue is transmitted by the bite of the Aedes aegypti mosquito, which breeds in clean, stagnant water (often accumulating during rainfall spikes and monsoon seasons).
+- Diagnostic Markers: Dengue fever is characterized by high fever, severe headache, muscle and joint pain, rash, and thrombocytopenia (low platelet count).
+- Platelet Count Benchmarks:
+  * Normal range: 150,000 to 450,000 cells/mcL.
+  * Mild Thrombocytopenia: 100,000 to 150,000 cells/mcL. Requires regular CBC monitoring (complete blood count) every 24-48 hours.
+  * Moderate Thrombocytopenia: 50,000 to 100,000 cells/mcL. Strict bed rest and monitoring for bleeding signs (gums, nose, urine).
+  * Critical Thrombocytopenia: Below 50,000 cells/mcL. High risk of spontaneous bleeding. Requires hospitalization and potential platelet transfusion.
+Community Interventions:
+1. Breeding Source Reduction: Drain standing water from flowerpots, coolers, and buckets at least once a week.
+2. Vector Control: Fogging in high-incidence zones and spraying larvicides in areas with water stagnation.
+3. Personal Protection: Use mosquito nets, window screens, and insect repellents (DEET or Picardin).
+4. Early Alert: A ward showing a 20% increase in cases week-over-week should trigger public health alerts and larval inspections.

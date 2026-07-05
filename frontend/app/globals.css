@@ -1,0 +1,253 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui;
+  --font-display: var(--font-space), ui-sans-serif, system-ui;
+  --font-mono: var(--font-ibm), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* ═══════════════════════════════════════
+   DEPTH SYSTEM — 7 surface layers
+   Creates real dimensionality, not flat
+   ═══════════════════════════════════════ */
+:root {
+  /* Surfaces — each 4-6 steps lighter */
+  --z0: #070C09;          /* void / page bg */
+  --z1: #0B1109;          /* base — body bg */
+  --z2: #101710;          /* card surface */
+  --z3: #161E15;          /* raised card */
+  --z4: #1C261A;          /* active / selected */
+  --z5: #222E20;          /* hover target */
+
+  /* Text */
+  --ink-1: #F0F2EB;       /* primary — near white, slightly warm */
+  --ink-2: #9BA698;       /* secondary — sage muted */
+  --ink-3: #5E6960;       /* tertiary — dim */
+
+  /* Status (consistent semantic meaning everywhere) */
+  --ok: #52C4A8;          /* live / healthy / normal */
+  --warn: #E9A63F;        /* caution / moderate */
+  --alert: #D95C44;       /* high risk / critical */
+  --info: #5B9BD5;        /* informational / forecast */
+
+  /* Borders */
+  --border-subtle: #1F2B1E;      /* hairline between panels */
+  --border-default: #2A3829;     /* standard panel border */
+  --border-active: #3D5239;      /* hover/focus border */
+
+  /* Shadows — stacked, never glowing */
+  --shadow-xs: 0 1px 2px rgba(0,0,0,0.5);
+  --shadow-sm: 0 2px 6px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.4);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.55), 0 2px 4px rgba(0,0,0,0.4);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.6), 0 4px 8px rgba(0,0,0,0.4);
+
+  /* Numeric/data accent */
+  --data: #C8CFC5;
+
+  /* Accent for focus rings */
+  --focus: rgba(82, 196, 168, 0.45);
+}
+
+/* ═══════════════════════════════════════
+   BASE RESET
+   ═══════════════════════════════════════ */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background: var(--z0);
+  color: var(--ink-1);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+/* ═══════════════════════════════════════
+   DOT GRID TEXTURE — signature depth element
+   Barely visible repeating dot pattern on page base
+   Adds dimensionality without color
+   ═══════════════════════════════════════ */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(255,255,255,0.028) 1px, transparent 1px);
+  background-size: 24px 24px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+main, header, footer, [data-layer] {
+  position: relative;
+  z-index: 1;
+}
+
+/* ═══════════════════════════════════════
+   TYPOGRAPHY SCALE
+   ═══════════════════════════════════════ */
+.text-2xs  { font-size: 10px; line-height: 1.4; }
+.text-xs   { font-size: 12px; line-height: 1.4; }
+.text-sm   { font-size: 13px; line-height: 1.5; }
+.text-base { font-size: 15px; line-height: 1.6; }
+.text-lg   { font-size: 18px; line-height: 1.45; }
+.text-xl   { font-size: 22px; line-height: 1.35; }
+.text-2xl  { font-size: 28px; line-height: 1.25; }
+.text-3xl  { font-size: 36px; line-height: 1.15; }
+.text-4xl  { font-size: 48px; line-height: 1.05; }
+.text-5xl  { font-size: 62px; line-height: 1.00; }
+
+/* ═══════════════════════════════════════
+   COMPONENT TOKENS
+   ═══════════════════════════════════════ */
+
+/* Panel — the standard card surface */
+.panel {
+  background: var(--z2);
+  border: 1px solid var(--border-default);
+  box-shadow: var(--shadow-sm);
+}
+
+.panel-raised {
+  background: var(--z3);
+  border: 1px solid var(--border-default);
+  box-shadow: var(--shadow-md);
+}
+
+/* Status pills */
+.status-ok    { color: var(--ok);    background: rgba(82,196,168,0.1);  border: 1px solid rgba(82,196,168,0.25); }
+.status-warn  { color: var(--warn);  background: rgba(233,166,63,0.1);  border: 1px solid rgba(233,166,63,0.25); }
+.status-alert { color: var(--alert); background: rgba(217,92,68,0.1);   border: 1px solid rgba(217,92,68,0.25); }
+
+/* Accent bar — the left-side indicator for briefings */
+.accent-bar-ok    { border-left: 3px solid var(--ok); }
+.accent-bar-warn  { border-left: 3px solid var(--warn); }
+.accent-bar-alert { border-left: 3px solid var(--alert); }
+.accent-bar-info  { border-left: 3px solid var(--info); }
+
+/* ═══════════════════════════════════════
+   ANIMATIONS & KEYFRAMES
+   ═══════════════════════════════════════ */
+
+/* Signal Strip horizontal ticker */
+@keyframes ticker {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(-50%, 0, 0); }
+}
+
+/* Fade + slide up — for messages, alerts */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Shimmer loading skeleton */
+@keyframes shimmer {
+  from { background-position: -400px 0; }
+  to   { background-position: 400px 0; }
+}
+
+/* Pulse status dot */
+@keyframes pulse-ok {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(82,196,168,0); }
+  50% { opacity: 0.7; box-shadow: 0 0 0 4px rgba(82,196,168,0.12); }
+}
+
+/* Number count-up shimmer */
+@keyframes dataLoad {
+  from { opacity: 0.3; }
+  to   { opacity: 1; }
+}
+
+/* Chart line trace */
+@keyframes drawLine {
+  from { stroke-dashoffset: 1000; }
+  to   { stroke-dashoffset: 0; }
+}
+
+/* Icon spin */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+
+/* ═══════════════════════════════════════
+   UTILITY CLASSES
+   ═══════════════════════════════════════ */
+
+.animate-slide-up { animation: slideUp 150ms ease-out both; }
+.animate-data-load { animation: dataLoad 400ms ease-out both; }
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--z3) 0px,
+    var(--z4) 80px,
+    var(--z3) 160px
+  );
+  background-size: 400px 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+/* Focus ring — accessible and brand-consistent */
+*:focus-visible {
+  outline: 2px solid var(--ok);
+  outline-offset: 2px;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--z0); }
+::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-active); }
+
+/* Selection */
+::selection { background: rgba(82,196,168,0.2); }
+
+/* ═══════════════════════════════════════
+   INTERACTIVE STATES
+   ═══════════════════════════════════════ */
+.btn-primary {
+  background: var(--ok);
+  color: #070C09;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.01em;
+  padding: 10px 20px;
+  border: none;
+  cursor: pointer;
+  transition: background 120ms, box-shadow 120ms, transform 80ms;
+}
+.btn-primary:hover { background: #5ED4B6; box-shadow: var(--shadow-sm); }
+.btn-primary:active { transform: translateY(1px); }
+.btn-primary:disabled { opacity: 0.38; cursor: not-allowed; transform: none; }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--ink-2);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 10px 20px;
+  border: 1px solid var(--border-default);
+  cursor: pointer;
+  transition: color 120ms, border-color 120ms, background 120ms;
+}
+.btn-ghost:hover { color: var(--ink-1); border-color: var(--border-active); background: var(--z3); }
+
+/* ═══════════════════════════════════════
+   REDUCED MOTION SUPPORT
+   ═══════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

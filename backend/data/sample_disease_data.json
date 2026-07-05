@@ -1,0 +1,242 @@
+[
+    {
+        "ward": "Ward 1",
+        "week": "Week 1",
+        "cases": 3,
+        "rainfall_mm": 12.0
+    },
+    {
+        "ward": "Ward 1",
+        "week": "Week 2",
+        "cases": 4,
+        "rainfall_mm": 15.0
+    },
+    {
+        "ward": "Ward 1",
+        "week": "Week 3",
+        "cases": 3,
+        "rainfall_mm": 80.0
+    },
+    {
+        "ward": "Ward 1",
+        "week": "Week 4",
+        "cases": 5,
+        "rainfall_mm": 14.0
+    },
+    {
+        "ward": "Ward 1",
+        "week": "Week 5",
+        "cases": 6,
+        "rainfall_mm": 10.0
+    },
+    {
+        "ward": "Ward 1",
+        "week": "Week 6",
+        "cases": 7,
+        "rainfall_mm": 5.0
+    },
+    {
+        "ward": "Ward 1",
+        "week": "Week 7",
+        "cases": 5,
+        "rainfall_mm": 8.0
+    },
+    {
+        "ward": "Ward 1",
+        "week": "Week 8",
+        "cases": 4,
+        "rainfall_mm": 12.0
+    },
+    {
+        "ward": "Ward 2",
+        "week": "Week 1",
+        "cases": 2,
+        "rainfall_mm": 12.0
+    },
+    {
+        "ward": "Ward 2",
+        "week": "Week 2",
+        "cases": 2,
+        "rainfall_mm": 15.0
+    },
+    {
+        "ward": "Ward 2",
+        "week": "Week 3",
+        "cases": 3,
+        "rainfall_mm": 80.0
+    },
+    {
+        "ward": "Ward 2",
+        "week": "Week 4",
+        "cases": 3,
+        "rainfall_mm": 14.0
+    },
+    {
+        "ward": "Ward 2",
+        "week": "Week 5",
+        "cases": 4,
+        "rainfall_mm": 10.0
+    },
+    {
+        "ward": "Ward 2",
+        "week": "Week 6",
+        "cases": 5,
+        "rainfall_mm": 5.0
+    },
+    {
+        "ward": "Ward 2",
+        "week": "Week 7",
+        "cases": 4,
+        "rainfall_mm": 8.0
+    },
+    {
+        "ward": "Ward 2",
+        "week": "Week 8",
+        "cases": 3,
+        "rainfall_mm": 12.0
+    },
+    {
+        "ward": "Ward 3",
+        "week": "Week 1",
+        "cases": 5,
+        "rainfall_mm": 10.0
+    },
+    {
+        "ward": "Ward 3",
+        "week": "Week 2",
+        "cases": 6,
+        "rainfall_mm": 12.0
+    },
+    {
+        "ward": "Ward 3",
+        "week": "Week 3",
+        "cases": 4,
+        "rainfall_mm": 85.0
+    },
+    {
+        "ward": "Ward 3",
+        "week": "Week 4",
+        "cases": 8,
+        "rainfall_mm": 15.0
+    },
+    {
+        "ward": "Ward 3",
+        "week": "Week 5",
+        "cases": 18,
+        "rainfall_mm": 8.0
+    },
+    {
+        "ward": "Ward 3",
+        "week": "Week 6",
+        "cases": 32,
+        "rainfall_mm": 5.0
+    },
+    {
+        "ward": "Ward 3",
+        "week": "Week 7",
+        "cases": 45,
+        "rainfall_mm": 10.0
+    },
+    {
+        "ward": "Ward 3",
+        "week": "Week 8",
+        "cases": 25,
+        "rainfall_mm": 12.0
+    },
+    {
+        "ward": "Ward 4",
+        "week": "Week 1",
+        "cases": 4,
+        "rainfall_mm": 15.0
+    },
+    {
+        "ward": "Ward 4",
+        "week": "Week 2",
+        "cases": 3,
+        "rainfall_mm": 10.0
+    },
+    {
+        "ward": "Ward 4",
+        "week": "Week 3",
+        "cases": 5,
+        "rainfall_mm": 90.0
+    },
+    {
+        "ward": "Ward 4",
+        "week": "Week 4",
+        "cases": 6,
+        "rainfall_mm": 20.0
+    },
+    {
+        "ward": "Ward 4",
+        "week": "Week 5",
+        "cases": 10,
+        "rainfall_mm": 12.0
+    },
+    {
+        "ward": "Ward 4",
+        "week": "Week 6",
+        "cases": 15,
+        "rainfall_mm": 6.0
+    },
+    {
+        "ward": "Ward 4",
+        "week": "Week 7",
+        "cases": 18,
+        "rainfall_mm": 8.0
+    },
+    {
+        "ward": "Ward 4",
+        "week": "Week 8",
+        "cases": 11,
+        "rainfall_mm": 10.0
+    },
+    {
+        "ward": "Ward 5",
+        "week": "Week 1",
+        "cases": 1,
+        "rainfall_mm": 8.0
+    },
+    {
+        "ward": "Ward 5",
+        "week": "Week 2",
+        "cases": 2,
+        "rainfall_mm": 10.0
+    },
+    {
+        "ward": "Ward 5",
+        "week": "Week 3",
+        "cases": 2,
+        "rainfall_mm": 70.0
+    },
+    {
+        "ward": "Ward 5",
+        "week": "Week 4",
+        "cases": 3,
+        "rainfall_mm": 12.0
+    },
+    {
+        "ward": "Ward 5",
+        "week": "Week 5",
+        "cases": 4,
+        "rainfall_mm": 8.0
+    },
+    {
+        "ward": "Ward 5",
+        "week": "Week 6",
+        "cases": 5,
+        "rainfall_mm": 4.0
+    },
+    {
+        "ward": "Ward 5",
+        "week": "Week 7",
+        "cases": 3,
+        "rainfall_mm": 5.0
+    },
+    {
+        "ward": "Ward 5",
+        "week": "Week 8",
+        "cases": 2,
+        "rainfall_mm": 10.0
+    }
+]

@@ -1,0 +1,10 @@
+WHO Guidelines for Drinking-Water Quality and Sanitation (Source: World Health Organization Guidelines, 4th Edition)
+Summary of Water Safety Standards:
+- Safe drinking water should have zero detectable E. coli or thermotolerant coliform bacteria in any 100 mL sample.
+- Turbidity: Ideally less than 1 NTU (Nephelometric Turbidity Unit) for effective disinfection, and never exceeding 5 NTU.
+- Chlorine Residual: For effective disinfection, there should be a free chlorine concentration of at least 0.5 mg/L after at least 30 minutes of contact time at pH < 8.0.
+- Health Risks: Contaminated drinking water is a primary vector for diarrheal diseases, cholera, dysentery, typhoid, and polio.
+Community Management:
+1. Sanitary Inspections: Regular testing of public borewells and municipal water lines, particularly during the monsoon season when runoff contaminates shallow aquifers.
+2. Boiling water: Boil water for at least 1-3 minutes if safety is in doubt, or use household water filters (RO, UV, or gravity-based).
+3. Sewage separation: Maintain a minimum distance of 15 meters between septic tanks and drinking water tube-wells.

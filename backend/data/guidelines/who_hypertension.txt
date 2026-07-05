@@ -1,0 +1,7 @@
+WHO Blood Pressure and Hypertension Classification Standards (Source: World Health Organization Guidelines for the Prevention and Management of Hypertension, 2023)
+- Normal Blood Pressure: Systolic BP less than 120 mmHg and Diastolic BP less than 80 mmHg.
+- Prehypertension / Elevated Blood Pressure: Systolic BP 120-129 mmHg and Diastolic BP less than 80 mmHg.
+- Stage 1 Hypertension: Systolic BP 130-139 mmHg or Diastolic BP 80-89 mmHg. Stage 1 hypertension is diagnosed when a patient repeatedly displays readings within this range.
+- Stage 2 Hypertension: Systolic BP 140 mmHg or higher, or Diastolic BP 90 mmHg or higher.
+- Hypertensive Crisis: Systolic BP higher than 180 mmHg and/or Diastolic BP higher than 120 mmHg. In this stage, immediate medical attention is required.
+Actionable Advice: Patients with Stage 1 Hypertension are advised to pursue lifestyle modifications (reducing sodium, regular aerobic exercise, stress reduction). If BP remains elevated after 3-6 months, pharmacological therapy should be initiated. For Stage 2 Hypertension, immediate medication combined with lifestyle changes is recommended.

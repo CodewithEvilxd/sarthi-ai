@@ -1,0 +1,16 @@
+Central Pollution Control Board (CPCB) National Ambient Air Quality Standards and AQI Categories (Source: Ministry of Environment, Forest and Climate Change, Government of India)
+Air Quality Index (AQI) values correspond to six specific health advisory categories:
+1. Good (AQI 0 - 50): Minimal health impact. Safe for all outdoor activities.
+2. Satisfactory (AQI 51 - 100): May cause minor breathing discomfort to sensitive people.
+3. Moderate (AQI 101 - 200): May cause breathing discomfort to people with lungs, asthma, and heart diseases.
+4. Poor (AQI 201 - 300): May cause breathing discomfort to most people on prolonged exposure. Sensitive groups should avoid heavy outdoor exertion.
+5. Very Poor (AQI 301 - 400): May cause respiratory illness on prolonged exposure. Effect may be more pronounced in people with lung and heart diseases. Active children and adults should avoid outdoor activities.
+6. Severe (AQI 401 - 500): Affects healthy people and seriously impacts those with existing diseases. Outdoor physical exertion should be completely avoided.
+
+Safe exposure limits for primary pollutants over a 24-hour average:
+- PM2.5 (Particulate Matter < 2.5 microns): 60 µg/m³
+- PM10 (Particulate Matter < 10 microns): 100 µg/m³
+- NO2 (Nitrogen Dioxide): 80 µg/m³
+- SO2 (Sulfur Dioxide): 80 µg/m³
+- O3 (Ozone, 8-hour average): 100 µg/m³
+If PM2.5 averages above 60 µg/m³, it exceeds the standard limit, triggering health advisory flags.
