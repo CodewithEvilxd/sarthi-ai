@@ -1,20 +1,20 @@
 # Sarthi AI
 
-Sarthi AI is a full-stack, multi-agent decision intelligence platform for community health and environmental decision support. It combines live telemetry, guideline-based reasoning, and explainable AI to help citizens and public agencies make safer, faster decisions.
+Sarthi AI is a full-stack, multi-agent decision intelligence platform for community health and environmental decision support. It combines a Gemini-powered conversational assistant with RAG-based grounding on official guidelines to help citizens and public agencies make safer, faster decisions.
 
 ## Why this project matters
 
 Sarthi AI brings together three core capabilities:
-- Live environmental intelligence for AQI, temperature, and rainfall
-- Health guidance grounded in WHO, ICMR, and CPCB standards
-- An explainable chat experience that shows which agents and data sources were used
+- A Gemini-powered conversational assistant for natural-language support
+- RAG-based grounding with WHO, ICMR, and CPCB official guidelines
+- Live environmental intelligence for AQI, temperature, and rainfall with explainable agent traceability
 
 ## What the system does
 
 - Routes user queries through a chief coordinator agent
 - Invokes specialized health and environment sub-agents
 - Uses RAG over guideline documents for evidence-backed answers
-- Presents results through a modern Next.js frontend and FastAPI backend
+- Presents results through a modern Next.js frontend and FastAPI backend with a Gemini-powered chat experience
 
 ## Project structure
 

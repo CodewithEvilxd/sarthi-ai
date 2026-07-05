@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { getCurrentEnv } from '../lib/api';
 
@@ -33,7 +33,7 @@ interface CityData {
 
 // Live animated terminal for the hero
 function TerminalWindow() {
-  const lines = [
+  const lines = useMemo(() => [
     { delay: 0,    text: '> classify_intent("Air quality in Delhi today?")',     color: 'var(--ink-2)' },
     { delay: 600,  text: '  ← INTENT: environment.aqi_query [PATNA]',            color: 'var(--ok)' },
     { delay: 1200, text: '> env_agent.fetch_live(city="Delhi")',                  color: 'var(--ink-2)' },
@@ -42,27 +42,33 @@ function TerminalWindow() {
     { delay: 3000, text: '  ← Retrieved 3 docs (0.18s)',                          color: 'var(--info)' },
     { delay: 3600, text: '> generate_answer(context, query)',                     color: 'var(--ink-2)' },
     { delay: 4200, text: '  ← AQI 247 — POOR. Avoid prolonged outdoor activity.', color: 'var(--warn)' },
-  ];
+  ], []);
 
   const [visible, setVisible] = useState<number[]>([]);
 
   useEffect(() => {
-    lines.forEach((line, idx) => {
-      setTimeout(() => {
-        setVisible(prev => [...prev, idx]);
-      }, line.delay);
-    });
-    // Restart loop
-    const restart = setInterval(() => {
-      setVisible([]);
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    const startAnimation = () => {
       lines.forEach((line, idx) => {
-        setTimeout(() => {
+        const timer = setTimeout(() => {
           setVisible(prev => [...prev, idx]);
         }, line.delay);
+        timers.push(timer);
       });
+    };
+
+    startAnimation();
+
+    const restart = setInterval(() => {
+      setVisible([]);
+      startAnimation();
     }, 6000);
-    return () => clearInterval(restart);
-  }, []);
+
+    return () => {
+      timers.forEach(clearTimeout);
+      clearInterval(restart);
+    };
+  }, [lines]);
 
   return (
     <div
