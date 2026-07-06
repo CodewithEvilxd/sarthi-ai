@@ -23,6 +23,97 @@ def _is_general_chat(query: str) -> bool:
     return False
 
 
+def analyze_query(query: str) -> dict:
+    """
+    Analyze the query and return routing decisions for the chat agent.
+    """
+    if _is_general_chat(query):
+        return {
+            "domains": [],
+            "reason": "Recognized a general greeting or open-ended chat.",
+            "extracted_city": "None"
+        }
+
+    classification_prompt = f"""
+    You are the Chief Coordinator for Sarthi AI.
+    Analyze the user query: "{query}"
+    Identify if it pertains to "health" (symptoms, blood pressure, platelets, RAG guidelines), 
+    "environment" (weather, AQI, outdoor safety, cities like Patna, Delhi, Mumbai, Bengaluru), 
+    or "both".
+    
+    Return ONLY a valid JSON string (no markdown, no ```json formatting) matching this schema:
+    {{
+        "domains": ["health"] or ["environment"] or ["health", "environment"],
+        "reason": "Brief explanation for the routing decision.",
+        "extracted_city": "Delhi" or "Patna" or "Mumbai" or "Bengaluru" or "None"
+    }}
+    """
+
+    routing_decision = generate_text(classification_prompt)
+    try:
+        text = routing_decision.strip()
+        if text.startswith("```json"):
+            text = text[7:]
+        if text.endswith("```"):
+            text = text[:-3]
+        text = text.strip()
+        decision_data = json.loads(text)
+    except Exception as e:
+        print(f"Chief Agent classification failed: {e}. Defaulting routing.")
+        q_lower = query.lower()
+        domains = []
+        city = "None"
+        for c in ["delhi", "patna", "mumbai", "bengaluru"]:
+            if c in q_lower:
+                city = c.capitalize()
+
+        if "aqi" in q_lower or "air" in q_lower or "weather" in q_lower or "rain" in q_lower or city != "None":
+            domains.append("environment")
+        if "bp" in q_lower or "symptom" in q_lower or "pressure" in q_lower or "platelet" in q_lower or "dengue" in q_lower or "health" in q_lower:
+            domains.append("health")
+
+        if not domains:
+            domains = ["health"]
+
+        decision_data = {
+            "domains": domains,
+            "reason": "Determined via heuristic keywords.",
+            "extracted_city": city
+        }
+
+    return {
+        "domains": decision_data.get("domains", ["health"]),
+        "reason": decision_data.get("reason", "Analyzed query keywords."),
+        "extracted_city": decision_data.get("extracted_city", "None")
+    }
+
+
+def is_generic_answer(answer: str) -> bool:
+    normalized = (answer or "").lower().strip()
+    generic_signals = [
+        "welcome to sarthi ai",
+        "i am sarthi",
+        "ask me something specific",
+        "please verify your sensor feeds",
+        "let me know if you need",
+        "i have analyzed your query",
+        "defaulting routing",
+        "chief decision intelligence coordinator",
+    ]
+    return any(signal in normalized for signal in generic_signals) or len(normalized) < 40
+
+
+def build_fallback_answer(sub_responses: dict) -> str:
+    parts = []
+    if sub_responses.get("health"):
+        parts.append(f"Health Assessment:\n{sub_responses['health']}")
+    if sub_responses.get("environment"):
+        parts.append(f"Environment Monitoring:\n{sub_responses['environment']}")
+    if parts:
+        return "\n\n".join(parts)
+    return "I could not generate a detailed answer from the sub-agents. Please ask a more specific health or environment question."
+
+
 async def run(query: str, db: Session) -> dict:
     """
     Chief Decision Agent: Classifies query domains, invokes corresponding sub-agents,
@@ -41,59 +132,11 @@ async def run(query: str, db: Session) -> dict:
             }],
             "sources": []
         }
-    
-    # 1. Routing classification
-    classification_prompt = f"""
-    You are the Chief Coordinator for Sarthi AI.
-    Analyze the user query: "{query}"
-    Identify if it pertains to "health" (symptoms, blood pressure, platelets, RAG guidelines), 
-    "environment" (weather, AQI, outdoor safety, cities like Patna, Delhi, Mumbai, Bengaluru), 
-    or "both".
-    
-    Return ONLY a valid JSON string (no markdown, no ```json formatting) matching this schema:
-    {{
-        "domains": ["health"] or ["environment"] or ["health", "environment"],
-        "reason": "Brief explanation for the routing decision.",
-        "extracted_city": "Delhi" or "Patna" or "Mumbai" or "Bengaluru" or "None"
-    }}
-    """
-    
-    routing_decision = generate_text(classification_prompt)
-    try:
-        text = routing_decision.strip()
-        if text.startswith("```json"):
-            text = text[7:]
-        if text.endswith("```"):
-            text = text[:-3]
-        text = text.strip()
-        decision_data = json.loads(text)
-    except Exception as e:
-        print(f"Chief Agent classification failed: {e}. Defaulting routing.")
-        # Fallback heuristic classification
-        q_lower = query.lower()
-        domains = []
-        city = "None"
-        for c in ["delhi", "patna", "mumbai", "bengaluru"]:
-            if c in q_lower:
-                city = c.capitalize()
-        
-        if "aqi" in q_lower or "air" in q_lower or "weather" in q_lower or "rain" in q_lower or city != "None":
-            domains.append("environment")
-        if "bp" in q_lower or "symptom" in q_lower or "pressure" in q_lower or "platelet" in q_lower or "dengue" in q_lower or "health" in q_lower:
-            domains.append("health")
-            
-        if not domains:
-            domains = ["health"] # Default
-            
-        decision_data = {
-            "domains": domains,
-            "reason": "Determined via heuristic keywords.",
-            "extracted_city": city
-        }
 
-    domains_routed = decision_data.get("domains", ["health"])
-    routing_reason = decision_data.get("reason", "Analyzed query keywords.")
-    extracted_city = decision_data.get("extracted_city", "None")
+    decision_data = analyze_query(query)
+    domains_routed = decision_data["domains"]
+    routing_reason = decision_data["reason"]
+    extracted_city = decision_data["extracted_city"]
 
     trace.append({
         "agent_name": "Chief Decision Agent",
@@ -149,7 +192,9 @@ async def run(query: str, db: Session) -> dict:
     """
     
     final_answer = generate_text(consolidated_prompt)
-    
+    if is_generic_answer(final_answer):
+        final_answer = build_fallback_answer(sub_responses)
+
     return {
         "answer": final_answer,
         "agent_trace": trace,

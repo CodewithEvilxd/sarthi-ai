@@ -1,7 +1,9 @@
 from typing import Optional, List, Dict, Any
 
+genai: Any = None
 try:
-    import google.generativeai as genai
+    import google.generativeai as genai_module
+    genai = genai_module
 except Exception:  # pragma: no cover - depends on optional runtime package
     genai = None
     print("Warning: google-generativeai import failed. Using mocked responses.")
@@ -11,13 +13,29 @@ import random
 import json
 import re
 import time
+import httpx
 from app.services.service_utils import log_event
 
-# Configure Gemini
-if genai is not None and settings.gemini_api_key and settings.gemini_api_key != "your_gemini_api_key_here":
-    genai.configure(api_key=settings.gemini_api_key)
+def _normalize_api_keys(raw_keys: str) -> list[str]:
+    keys = []
+    for part in (raw_keys or "").split(","):
+        value = part.strip()
+        if value and value != "your_gemini_api_key_here":
+            keys.append(value)
+    return keys
+
+_GEMINI_API_KEYS = []
+if settings.gemini_api_keys:
+    _GEMINI_API_KEYS = _normalize_api_keys(settings.gemini_api_keys)
+if settings.gemini_api_key and settings.gemini_api_key != "your_gemini_api_key_here":
+    _GEMINI_API_KEYS = [settings.gemini_api_key] + [k for k in _GEMINI_API_KEYS if k != settings.gemini_api_key]
+
+if genai is None:
+    print("Warning: google-generativeai import failed. Using mocked responses.")
+elif not _GEMINI_API_KEYS:
+    print("Warning: GEMINI_API_KEY(S) are not set. Using mocked responses.")
 else:
-    print("Warning: GEMINI_API_KEY is not set or google-generativeai is unavailable. Using mocked responses.")
+    genai.configure(api_key=_GEMINI_API_KEYS[0])
 
 # Keep track of quota exhaustion window to avoid sequential API hangs
 _quota_exhausted_until = 0.0
@@ -27,22 +45,28 @@ def get_model(model_name: str = "gemini-2.5-flash"):
         raise RuntimeError("google-generativeai is not installed")
     return genai.GenerativeModel(model_name)
 
-def generate_text(prompt: str, system_instruction: Optional[str] = None) -> str:
-    """
-    Generates text from Gemini models. Falls back to next models if quota is exceeded or key is missing.
-    """
-    global _quota_exhausted_until
-    
-    if genai is None or not settings.gemini_api_key or settings.gemini_api_key == "your_gemini_api_key_here":
-        return generate_mock_text(prompt)
-        
-    if time.time() < _quota_exhausted_until:
-        print(f"Gemini API: Quota previously exhausted. Bypassing calls for {int(_quota_exhausted_until - time.time())}s. Using mock text.")
-        return generate_mock_text(prompt)
-    
-    models_to_try = ["gemini-2.5-flash", "gemini-3.1-flash-lite", "gemini-3.5-flash", "gemini-2.0-flash"]
-    last_error = None
-    
+OPENAI_MODEL = "gpt-3.5-turbo"
+OPENAI_EMBEDDING_MODEL = "text-embedding-3-small"
+
+
+def _gemini_keys() -> list[str]:
+    return _GEMINI_API_KEYS.copy()
+
+
+def _configure_gemini_key(key: str) -> None:
+    if genai is None:
+        return
+    try:
+        genai.configure(api_key=key)
+    except Exception as e:
+        log_event("gemini_configure_failed", api_key=key, error=str(e))
+
+
+def _try_gemini_text(prompt: str, system_instruction: Optional[str], key: str) -> str:
+    _configure_gemini_key(key)
+    if genai is None:
+        raise RuntimeError("Gemini provider is unavailable")
+    models_to_try = ["gemini-3.1-flash-lite", "gemini-3.5-flash", "gemini-2.5-flash", "gemini-2.0-flash"]
     for model_name in models_to_try:
         try:
             model = genai.GenerativeModel(
@@ -50,54 +74,176 @@ def generate_text(prompt: str, system_instruction: Optional[str] = None) -> str:
                 system_instruction=system_instruction
             )
             response = model.generate_content(prompt, request_options={'timeout': 2.0})
-            log_event("gemini_provider_hit", model=model_name)
+            log_event("gemini_provider_hit", model=model_name, api_key=key[-8:])
             return response.text
         except Exception as e:
             err_str = str(e).lower()
-            log_event("gemini_request_failed", model=model_name, error=str(e))
-            last_error = e
-            
-            # If rate limit, quota is hit, or network is timeout/unstable, suspend all Gemini API calls immediately for 60 seconds
+            log_event("gemini_request_failed", model=model_name, api_key=key[-8:], error=str(e))
             if any(k in err_str for k in ["429", "quota", "exhausted", "deadline", "timeout", "connect", "504", "503", "unavailable"]):
-                print("Gemini API: Quota exhaustion or network timeout/unavailability detected. Suspending API calls for 60 seconds.")
-                _quota_exhausted_until = time.time() + 60.0
-                break
-                
+                print(f"Gemini API key fallback: Key ending in {key[-8:]} hit quota/timeout. Trying next key.")
+                continue
             continue
-            
-    log_event("gemini_fallback_used", reason="all_models_failed_or_quota_exhausted")
-    return generate_mock_text(prompt)
+    raise RuntimeError(f"All Gemini models failed for key ending in {key[-8:]}")
 
-def get_embedding(text: str, is_query: bool = False) -> list:
-    """
-    Generates a 3072-dimensional text embedding.
-    """
-    global _quota_exhausted_until
-    
-    if genai is None or not settings.gemini_api_key or settings.gemini_api_key == "your_gemini_api_key_here":
-        return [random.uniform(-0.1, 0.1) for _ in range(3072)]
-        
-    if time.time() < _quota_exhausted_until:
-        return [random.uniform(-0.1, 0.1) for _ in range(3072)]
-        
+
+def _try_gemini_embedding(text: str, is_query: bool, key: str) -> list:
+    _configure_gemini_key(key)
+    if genai is None:
+        raise RuntimeError("Gemini provider is unavailable")
+    task = "retrieval_query" if is_query else "retrieval_document"
     try:
-        task = "retrieval_query" if is_query else "retrieval_document"
         res = genai.embed_content(
             model="models/gemini-embedding-001",
             content=text,
             task_type=task,
             request_options={'timeout': 2.0}
         )
+        log_event("gemini_embedding_hit", api_key=key[-8:])
         return res.get("embedding", [random.uniform(-0.1, 0.1) for _ in range(3072)])
     except Exception as e:
         err_str = str(e).lower()
-        log_event("gemini_embedding_failed", error=str(e))
-        
+        log_event("gemini_embedding_failed", api_key=key[-8:], error=str(e))
         if any(k in err_str for k in ["429", "quota", "exhausted", "deadline", "timeout", "connect", "504", "503", "unavailable"]):
-            log_event("gemini_quota_suspended", scope="embedding", cooldown_seconds=60)
-            _quota_exhausted_until = time.time() + 60.0
-            
+            print(f"Gemini embedding key fallback: Key ending in {key[-8:]} hit quota/timeout. Trying next key.")
+        raise
+
+
+def _has_openai_credentials() -> bool:
+    return bool(settings.openai_api_key and settings.openai_api_key != "your_openai_api_key_here")
+
+
+def _openai_headers() -> dict:
+    return {
+        "Authorization": f"Bearer {settings.openai_api_key}",
+        "Content-Type": "application/json"
+    }
+
+
+def generate_openai_text(prompt: str, system_instruction: Optional[str] = None) -> str:
+    if not _has_openai_credentials():
+        raise RuntimeError("OpenAI API key is not configured")
+
+    messages = []
+    if system_instruction:
+        messages.append({"role": "system", "content": system_instruction})
+    messages.append({"role": "user", "content": prompt})
+
+    response = httpx.post(
+        f"{settings.openai_api_base.rstrip('/')}/chat/completions",
+        headers=_openai_headers(),
+        json={
+            "model": OPENAI_MODEL,
+            "messages": messages,
+            "temperature": 0.6,
+            "max_tokens": 512
+        },
+        timeout=10.0
+    )
+    response.raise_for_status()
+    data = response.json()
+    text = data.get("choices", [])[0].get("message", {}).get("content", "").strip()
+    log_event("openai_provider_hit", model=OPENAI_MODEL)
+    return text
+
+
+def get_openai_embedding(text: str, is_query: bool = False) -> list:
+    if not _has_openai_credentials():
+        raise RuntimeError("OpenAI API key is not configured")
+
+    response = httpx.post(
+        f"{settings.openai_api_base.rstrip('/')}/embeddings",
+        headers=_openai_headers(),
+        json={
+            "model": OPENAI_EMBEDDING_MODEL,
+            "input": text
+        },
+        timeout=10.0
+    )
+    response.raise_for_status()
+    data = response.json()
+    embedding = data.get("data", [])[0].get("embedding", [])
+    log_event("openai_embedding_hit", model=OPENAI_EMBEDDING_MODEL)
+    return embedding
+
+
+def generate_text(prompt: str, system_instruction: Optional[str] = None) -> str:
+    """
+    Generates text from Gemini models. Falls back to OpenAI when Gemini is unavailable or quota is exceeded.
+    """
+    global _quota_exhausted_until
+
+    keys = _gemini_keys()
+    if genai is None or not keys:
+        if _has_openai_credentials():
+            try:
+                return generate_openai_text(prompt, system_instruction=system_instruction)
+            except Exception as e:
+                log_event("openai_request_failed", error=str(e))
+        return generate_mock_text(prompt)
+
+    if time.time() < _quota_exhausted_until:
+        print(f"Gemini API: Quota previously exhausted. Bypassing calls for {int(_quota_exhausted_until - time.time())}s. Trying OpenAI or mock text.")
+        if _has_openai_credentials():
+            try:
+                return generate_openai_text(prompt, system_instruction=system_instruction)
+            except Exception as e:
+                log_event("openai_request_failed", error=str(e))
+        return generate_mock_text(prompt)
+
+    for key in keys:
+        try:
+            return _try_gemini_text(prompt, system_instruction, key)
+        except Exception as e:
+            log_event("gemini_key_failed", api_key=key[-8:], error=str(e))
+            continue
+
+    if _has_openai_credentials():
+        try:
+            return generate_openai_text(prompt, system_instruction=system_instruction)
+        except Exception as e:
+            log_event("openai_request_failed", error=str(e))
+
+    log_event("gemini_fallback_used", reason="all_keys_failed_or_quota_exhausted")
+    return generate_mock_text(prompt)
+
+
+def get_embedding(text: str, is_query: bool = False) -> list:
+    """
+    Generates a 3072-dimensional text embedding, using Gemini first and OpenAI as fallback.
+    """
+    global _quota_exhausted_until
+
+    keys = _gemini_keys()
+    if genai is None or not keys:
+        if _has_openai_credentials():
+            try:
+                return get_openai_embedding(text, is_query=is_query)
+            except Exception as e:
+                log_event("openai_embedding_failed", error=str(e))
         return [random.uniform(-0.1, 0.1) for _ in range(3072)]
+
+    if time.time() < _quota_exhausted_until:
+        if _has_openai_credentials():
+            try:
+                return get_openai_embedding(text, is_query=is_query)
+            except Exception as e:
+                log_event("openai_embedding_failed", error=str(e))
+        return [random.uniform(-0.1, 0.1) for _ in range(3072)]
+
+    for key in keys:
+        try:
+            return _try_gemini_embedding(text, is_query, key)
+        except Exception as e:
+            log_event("gemini_embedding_key_failed", api_key=key[-8:], error=str(e))
+            continue
+
+    if _has_openai_credentials():
+        try:
+            return get_openai_embedding(text, is_query=is_query)
+        except Exception as e:
+            log_event("openai_embedding_failed", error=str(e))
+
+    return [random.uniform(-0.1, 0.1) for _ in range(3072)]
 
 def generate_mock_text(prompt: str) -> str:
     """
