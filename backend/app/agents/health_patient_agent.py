@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from app.rag.retriever import retrieve_relevant_chunks
 from app.services.gemini_service import generate_text
+from app.services.prompt_utils import compact_prompt, short_system_instruction
 
 async def run(query: str, db: Session) -> dict:
     """
@@ -28,7 +29,9 @@ async def run(query: str, db: Session) -> dict:
     """
     
     system_instruction = "You are an expert patient-support bot referencing WHO and ICMR standards."
-    response = generate_text(prompt, system_instruction=system_instruction)
+    compacted = compact_prompt(prompt, max_length=2000)
+    short_sys = short_system_instruction("health")
+    response = generate_text(compacted, system_instruction=short_sys)
     
     why_text = "Based on guideline comparisons."
     if "**Why?**" in response:

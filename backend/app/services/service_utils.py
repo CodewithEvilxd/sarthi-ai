@@ -107,3 +107,9 @@ async def fetch_json(
                 return None
 
     return None
+
+
+def get_circuit_status() -> dict:
+    """Return a snapshot of circuit states (key suffixes only)."""
+    # return suffix->state map
+    return {k[-8:]: {"open_until": v["open_until"], "failures": v["failures"]} for k, v in _CIRCUITS.items()}

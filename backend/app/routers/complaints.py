@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from app.db.database import get_db, Complaint
 from app.models.schemas import ComplaintResponse
 from app.services.gemini_service import generate_text
+from app.services.prompt_utils import compact_prompt, short_system_instruction
 import app.services.vision_service as vision_service
 from typing import Optional, List, cast
 import json
@@ -54,7 +55,8 @@ async def submit_complaint(
     }}
     """
     
-    response = generate_text(classification_prompt)
+    compacted = compact_prompt(classification_prompt)
+    response = generate_text(compacted, system_instruction=short_system_instruction("chief"))
     try:
         text = response.strip()
         if text.startswith("```json"):

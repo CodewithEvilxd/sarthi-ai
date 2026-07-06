@@ -14,7 +14,7 @@ import json
 import re
 import time
 import httpx
-from app.services.service_utils import log_event
+from app.services.service_utils import log_event, record_failure, record_success, circuit_allows
 
 def _normalize_api_keys(raw_keys: str) -> list[str]:
     keys = []
@@ -53,6 +53,15 @@ def _gemini_keys() -> list[str]:
     return _GEMINI_API_KEYS.copy()
 
 
+# Track last provider used for telemetry (non-secret)
+_last_provider: dict = {"provider": "none", "key_suffix": None, "model": None}
+
+
+def get_last_provider() -> dict:
+    """Return a copy of the last provider info (safe, non-secret)."""
+    return _last_provider.copy()
+
+
 def _configure_gemini_key(key: str) -> None:
     if genai is None:
         return
@@ -73,7 +82,12 @@ def _try_gemini_text(prompt: str, system_instruction: Optional[str], key: str) -
                 model_name=model_name,
                 system_instruction=system_instruction
             )
-            response = model.generate_content(prompt, request_options={'timeout': 2.0})
+            # Use conservative generation settings to save quota and tokens
+            # Use basic request options compatible with multiple genai versions
+            response = model.generate_content(
+                prompt,
+                request_options={'timeout': 2.0}
+            )
             log_event("gemini_provider_hit", model=model_name, api_key=key[-8:])
             return response.text
         except Exception as e:
@@ -128,14 +142,15 @@ def generate_openai_text(prompt: str, system_instruction: Optional[str] = None) 
         messages.append({"role": "system", "content": system_instruction})
     messages.append({"role": "user", "content": prompt})
 
+    # Use conservative settings to reduce token consumption where possible
     response = httpx.post(
         f"{settings.openai_api_base.rstrip('/')}/chat/completions",
         headers=_openai_headers(),
         json={
             "model": OPENAI_MODEL,
             "messages": messages,
-            "temperature": 0.6,
-            "max_tokens": 512
+            "temperature": 0.3,
+            "max_tokens": 256
         },
         timeout=10.0
     )
@@ -191,19 +206,44 @@ def generate_text(prompt: str, system_instruction: Optional[str] = None) -> str:
         return generate_mock_text(prompt)
 
     for key in keys:
+        # Skip keys whose circuit is open
+        if not circuit_allows(key):
+            log_event("gemini_key_skipped_circuit_open", api_key=key[-8:])
+            continue
         try:
-            return _try_gemini_text(prompt, system_instruction, key)
+            res = _try_gemini_text(prompt, system_instruction, key)
+            # mark success for this key
+            try:
+                record_success(key)
+            except Exception:
+                pass
+            _last_provider["provider"] = "gemini"
+            _last_provider["key_suffix"] = key[-8:]
+            # model is set inside _try_gemini_text via log_event; optional
+            return res
         except Exception as e:
             log_event("gemini_key_failed", api_key=key[-8:], error=str(e))
+            try:
+                # increment failure counter and possibly open circuit
+                record_failure(key, threshold=2, cooldown_seconds=30)
+            except Exception:
+                pass
             continue
 
     if _has_openai_credentials():
         try:
-            return generate_openai_text(prompt, system_instruction=system_instruction)
+            text = generate_openai_text(prompt, system_instruction=system_instruction)
+            _last_provider["provider"] = "openai"
+            _last_provider["key_suffix"] = None
+            _last_provider["model"] = OPENAI_MODEL
+            return text
         except Exception as e:
             log_event("openai_request_failed", error=str(e))
 
     log_event("gemini_fallback_used", reason="all_keys_failed_or_quota_exhausted")
+    _last_provider["provider"] = "mock"
+    _last_provider["key_suffix"] = None
+    _last_provider["model"] = None
     return generate_mock_text(prompt)
 
 

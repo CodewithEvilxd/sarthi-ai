@@ -1,6 +1,7 @@
 from app.services.openaq_service import fetch_live_aqi_details, get_cpcb_category, get_us_aqi_category
 from app.services.openmeteo_service import fetch_weather
 from app.services.gemini_service import generate_text
+from app.services.prompt_utils import compact_prompt, short_system_instruction
 import json
 
 async def run(city: str) -> dict:
@@ -40,7 +41,9 @@ async def run(city: str) -> dict:
     }}
     """
     
-    response = generate_text(prompt)
+    compacted = compact_prompt(prompt)
+    system_instruction = short_system_instruction("environment")
+    response = generate_text(compacted, system_instruction=system_instruction)
     try:
         text = response.strip()
         if text.startswith("```json"):
@@ -49,6 +52,23 @@ async def run(city: str) -> dict:
             text = text[:-3]
         text = text.strip()
         data = json.loads(text)
+        # Sanity-check model output against numeric AQI; override if contradicts
+        try:
+            canonical_safe, canonical_why, canonical_recs = _canonical_recommendations(aqi_us, rain)
+            model_safe = bool(data.get("is_safe", canonical_safe))
+            model_recs = [r.lower() for r in data.get("recommendations", [])]
+            # If model says safe but numeric AQI indicates not safe, override
+            if canonical_safe is False and model_safe is True:
+                data["is_safe"] = canonical_safe
+                data["why"] = canonical_why
+                data["recommendations"] = canonical_recs
+            else:
+                # If model recommended 'no masks' but canonical suggests masks, override
+                if any("no mask" in r or "no masks" in r for r in model_recs) and any("mask" in r for r in canonical_recs):
+                    data["recommendations"] = canonical_recs
+                    data["why"] = canonical_why
+        except Exception:
+            pass
     except Exception as e:
         print(f"Fallback parsing for Personal Env Agent: {e}")
         recs = []
@@ -89,3 +109,30 @@ async def run(city: str) -> dict:
         "recommendations": data.get("recommendations", []),
         "why": data.get("why", "")
     }
+
+
+def _canonical_recommendations(aqi_us: float, rain: float) -> (bool, str, list):
+    """Return canonical is_safe, why, and recommendations based on numeric AQI and rainfall."""
+    if aqi_us <= 50:
+        why = f"The air quality is Good (AQI-US {aqi_us}). Minimal health impact."
+        recs = ["Safe to jog or exercise outdoors.", "Ensure indoor ventilation.", "No masks necessary."]
+        return True, why, recs
+    if aqi_us <= 100:
+        why = f"The air quality is Moderate (AQI-US {aqi_us}). Some sensitive people may be affected."
+        recs = ["Safe for general outdoor work.", "Sensitive citizens should take breaks.", "Ventilate during non-peak traffic times."]
+        return True, why, recs
+    if aqi_us <= 150:
+        why = f"Unhealthy for Sensitive Groups (AQI-US {aqi_us}). Children, elderly, and people with respiratory conditions may be affected."
+        recs = ["Limit prolonged outdoor exertion.", "Wear a well-fitting surgical or higher-grade mask during travel.", "People with asthma keep inhalers handy."]
+        return False, why, recs
+    if aqi_us <= 200:
+        why = f"Unhealthy (AQI-US {aqi_us}). General population may experience health effects."
+        recs = ["Avoid long hours outdoors.", "Wear an N95/FFP2 mask when outdoors.", "Keep windows closed and use air purifiers indoors."]
+        return False, why, recs
+    if aqi_us <= 300:
+        why = f"Very Unhealthy (AQI-US {aqi_us}). Serious health effects possible."
+        recs = ["Avoid all outdoor physical activity.", "Use high-efficiency masks (N95/FFP2) if going outside.", "Ensure vulnerable people stay indoors in clean-air rooms."]
+        return False, why, recs
+    why = f"Hazardous air quality (AQI-US {aqi_us}). Extreme conditions."
+    recs = ["Remain indoors and avoid exposure.", "Use high-efficiency filtration and masks if necessary.", "Seek medical attention for breathing issues."]
+    return False, why, recs

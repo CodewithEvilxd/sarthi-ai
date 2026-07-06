@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from app.db.database import DiseaseData
 from app.services.gemini_service import generate_text
+from app.services.prompt_utils import compact_prompt, short_system_instruction
 import json
 
 async def run(ward: str, db: Session) -> dict:
@@ -43,7 +44,8 @@ async def run(ward: str, db: Session) -> dict:
     }}
     """
     
-    response = generate_text(prompt)
+    compacted = compact_prompt(prompt, max_length=1800)
+    response = generate_text(compacted, system_instruction=short_system_instruction("health"))
     try:
         text = response.strip()
         if text.startswith("```json"):

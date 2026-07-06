@@ -8,6 +8,7 @@ from app.db.database import init_db
 from app.db.seed_data import seed_database
 from app.rag.ingest import ingest_guidelines
 from app.routers import chat, health, environment, complaints
+from app.routers import admin
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -56,6 +57,7 @@ app.include_router(chat.router)
 app.include_router(health.router)
 app.include_router(environment.router)
 app.include_router(complaints.router)
+app.include_router(admin.router)
 
 @app.get("/favicon.ico", include_in_schema=False)
 def favicon():
